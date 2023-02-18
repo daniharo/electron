@@ -1,8 +1,8 @@
 import * as electron from 'electron/main';
 
-import * as fs from 'fs';
-import * as path from 'path';
-import * as url from 'url';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as url from 'node:url';
 const { app, dialog } = electron;
 
 type DefaultAppOptions = {

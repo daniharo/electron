@@ -1,5 +1,5 @@
 (function () {
-  const { setImmediate } = require('timers');
+  const { setImmediate } = require('node:timers');
   const { ipcRenderer } = require('electron');
   window.ipcRenderer = ipcRenderer;
   window.setImmediate = setImmediate;

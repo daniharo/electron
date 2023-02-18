@@ -1,12 +1,12 @@
 import { expect } from 'chai';
-import * as path from 'path';
-import * as url from 'url';
-import { Worker } from 'worker_threads';
+import * as path from 'node:path';
+import * as url from 'node:url';
+import { Worker } from 'node:worker_threads';
 import { BrowserWindow, ipcMain } from 'electron/main';
 import { closeAllWindows } from './lib/window-helpers';
 import { getRemoteContext, ifdescribe, ifit, itremote, useRemoteContext } from './lib/spec-helpers';
-import * as importedFs from 'fs';
-import { once } from 'events';
+import * as importedFs from 'node:fs';
+import { once } from 'node:events';
 
 const features = process._linkedBinding('electron_common_features');
 
@@ -144,7 +144,7 @@ function promisify (_f: Function): any {
 describe('asar package', function () {
   const fixtures = path.join(__dirname, 'fixtures');
   const asarDir = path.join(fixtures, 'test.asar');
-  const fs = require('fs') as typeof importedFs; // dummy, to fool typescript
+  const fs = require('node:fs') as typeof importedFs; // dummy, to fool typescript
 
   useRemoteContext({
     url: url.pathToFileURL(path.join(fixtures, 'pages', 'blank.html')),
@@ -161,8 +161,8 @@ describe('asar package', function () {
         chai.expect(error).to.have.property('code').which.equals(code);
       }
 
-      fs = require('fs')
-      path = require('path')
+      fs = require('node:fs')
+      path = require('node:path')
       asarDir = ${JSON.stringify(asarDir)}
 
       // This is used instead of util.promisify for some tests to dodge the
@@ -1123,13 +1123,13 @@ describe('asar package', function () {
 
       itremote('promisified version handles an existing file', async () => {
         const p = path.join(asarDir, 'a.asar', 'file1');
-        const exists = await require('util').promisify(fs.exists)(p);
+        const exists = await require('node:util').promisify(fs.exists)(p);
         expect(exists).to.be.true();
       });
 
       itremote('promisified version handles a non-existent file', async function () {
         const p = path.join(asarDir, 'a.asar', 'not-exist');
-        const exists = await require('util').promisify(fs.exists)(p);
+        const exists = await require('node:util').promisify(fs.exists)(p);
         expect(exists).to.be.false();
       });
     });
@@ -1224,7 +1224,7 @@ describe('asar package', function () {
 
     ifdescribe(features.isRunAsNodeEnabled())('child_process.fork', function () {
       itremote('opens a normal js file', async function () {
-        const child = require('child_process').fork(path.join(asarDir, 'a.asar', 'ping.js'));
+        const child = require('node:child_process').fork(path.join(asarDir, 'a.asar', 'ping.js'));
         child.send('message');
         const msg = await new Promise(resolve => child.once('message', resolve));
         expect(msg).to.equal('message');
@@ -1232,7 +1232,7 @@ describe('asar package', function () {
 
       itremote('supports asar in the forked js', async function (fixtures: string) {
         const file = path.join(asarDir, 'a.asar', 'file1');
-        const child = require('child_process').fork(path.join(fixtures, 'module', 'asar.js'));
+        const child = require('node:child_process').fork(path.join(fixtures, 'module', 'asar.js'));
         child.send(file);
         const content = await new Promise(resolve => child.once('message', resolve));
         expect(content).to.equal(fs.readFileSync(file).toString());
@@ -1243,7 +1243,7 @@ describe('asar package', function () {
       itremote('should not try to extract the command if there is a reference to a file inside an .asar', async function () {
         const echo = path.join(asarDir, 'echo.asar', 'echo');
 
-        const stdout = await promisify(require('child_process').exec)('echo ' + echo + ' foo bar');
+        const stdout = await promisify(require('node:child_process').exec)('echo ' + echo + ' foo bar');
         expect(stdout.toString().replace(/\r/g, '')).to.equal(echo + ' foo bar\n');
       });
     });
@@ -1252,7 +1252,7 @@ describe('asar package', function () {
       itremote('should not try to extract the command if there is a reference to a file inside an .asar', async function () {
         const echo = path.join(asarDir, 'echo.asar', 'echo');
 
-        const stdout = require('child_process').execSync('echo ' + echo + ' foo bar');
+        const stdout = require('node:child_process').execSync('echo ' + echo + ' foo bar');
         expect(stdout.toString().replace(/\r/g, '')).to.equal(echo + ' foo bar\n');
       });
     });
@@ -1260,13 +1260,13 @@ describe('asar package', function () {
     ifdescribe(process.platform === 'darwin' && process.arch !== 'arm64')('child_process.execFile', function () {
       itremote('executes binaries', async function () {
         const echo = path.join(asarDir, 'echo.asar', 'echo');
-        const stdout = await promisify(require('child_process').execFile)(echo, ['test']);
+        const stdout = await promisify(require('node:child_process').execFile)(echo, ['test']);
         expect(stdout).to.equal('test\n');
       });
 
       itremote('executes binaries without callback', async function () {
         const echo = path.join(asarDir, 'echo.asar', 'echo');
-        const process = require('child_process').execFile(echo, ['test']);
+        const process = require('node:child_process').execFile(echo, ['test']);
         const code = await new Promise(resolve => process.once('close', resolve));
         expect(code).to.equal(0);
         process.on('error', function () {
@@ -1276,14 +1276,14 @@ describe('asar package', function () {
 
       itremote('execFileSync executes binaries', function () {
         const echo = path.join(asarDir, 'echo.asar', 'echo');
-        const output = require('child_process').execFileSync(echo, ['test']);
+        const output = require('node:child_process').execFileSync(echo, ['test']);
         expect(String(output)).to.equal('test\n');
       });
     });
 
     describe('internalModuleReadJSON', function () {
       itremote('reads a normal file', function () {
-        const { internalModuleReadJSON } = (process as any).binding('fs');
+        const { internalModuleReadJSON } = (process as any).binding('node:fs');
         const file1 = path.join(asarDir, 'a.asar', 'file1');
         const [s1, c1] = internalModuleReadJSON(file1);
         expect([s1.toString().trim(), c1]).to.eql(['file1', true]);
@@ -1298,7 +1298,7 @@ describe('asar package', function () {
       });
 
       itremote('reads a normal file with unpacked files', function () {
-        const { internalModuleReadJSON } = (process as any).binding('fs');
+        const { internalModuleReadJSON } = (process as any).binding('node:fs');
         const p = path.join(asarDir, 'unpack.asar', 'a.txt');
         const [s, c] = internalModuleReadJSON(p);
         expect([s.toString().trim(), c]).to.eql(['a', true]);
@@ -1308,7 +1308,7 @@ describe('asar package', function () {
     describe('util.promisify', function () {
       itremote('can promisify all fs functions', function () {
         const originalFs = require('original-fs');
-        const util = require('util');
+        const util = require('node:util');
         const { hasOwnProperty } = Object.prototype;
 
         for (const [propertyName, originalValue] of Object.entries(originalFs)) {
@@ -1402,7 +1402,7 @@ describe('asar package', function () {
       itremote('is reset to its original value when execSync throws an error', function () {
         process.noAsar = false;
         expect(() => {
-          require('child_process').execSync(path.join(__dirname, 'does-not-exist.txt'));
+          require('node:child_process').execSync(path.join(__dirname, 'does-not-exist.txt'));
         }).to.throw();
         expect(process.noAsar).to.be.false();
       });
@@ -1534,8 +1534,8 @@ describe('asar package', function () {
     });
 
     itremote('has the same APIs as fs', function () {
-      expect(Object.keys(require('fs'))).to.deep.equal(Object.keys(require('original-fs')));
-      expect(Object.keys(require('fs').promises)).to.deep.equal(Object.keys(require('original-fs').promises));
+      expect(Object.keys(require('node:fs'))).to.deep.equal(Object.keys(require('original-fs')));
+      expect(Object.keys(require('node:fs').promises)).to.deep.equal(Object.keys(require('original-fs').promises));
     });
   });
 
