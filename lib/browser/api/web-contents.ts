@@ -339,31 +339,40 @@ WebContents.prototype.printToPDF = async function (options) {
 // print param logic into new file shared between printToPDF and print
 WebContents.prototype.print = function (printOptions: ElectronInternal.WebContentsPrintOptions, callback) {
   const options = printOptions ?? {};
-  if (options.pageSize) {
-    const pageSize = options.pageSize;
-    if (typeof pageSize === 'object') {
-      if (!pageSize.height || !pageSize.width) {
-        throw new Error('height and width properties are required for pageSize');
-      }
-
-      // Dimensions in Microns - 1 meter = 10^6 microns
-      const height = Math.ceil(pageSize.height);
-      const width = Math.ceil(pageSize.width);
-      if (!isValidCustomPageSize(width, height)) {
-        throw new Error('height and width properties must be minimum 352 microns.');
-      }
-
-      options.mediaSize = {
-        name: 'CUSTOM',
-        custom_display_name: 'Custom',
-        height_microns: height,
-        width_microns: width
-      };
-    } else if (PDFPageSizes[pageSize]) {
-      options.mediaSize = PDFPageSizes[pageSize];
-    } else {
-      throw new Error(`Unsupported pageSize: ${pageSize}`);
+  const pageSize = options.pageSize ?? 'A4';
+  if (typeof pageSize === 'object') {
+    if (!pageSize.height || !pageSize.width) {
+      throw new Error('height and width properties are required for pageSize');
     }
+
+    // Dimensions in Microns - 1 meter = 10^6 microns
+    const height = Math.ceil(pageSize.height);
+    const width = Math.ceil(pageSize.width);
+    if (!isValidCustomPageSize(width, height)) {
+      throw new Error('height and width properties must be minimum 352 microns.');
+    }
+
+    options.mediaSize = {
+      name: 'CUSTOM',
+      custom_display_name: 'Custom',
+      height_microns: height,
+      width_microns: width,
+      imageable_area_left_microns: 0,
+      imageable_area_bottom_microns: 0,
+      imageable_area_right_microns: width,
+      imageable_area_top_microns: height
+    };
+  } else if (PDFPageSizes[pageSize]) {
+    const mediaSize = PDFPageSizes[pageSize];
+    options.mediaSize = {
+      ...mediaSize,
+      imageable_area_left_microns: 0,
+      imageable_area_bottom_microns: 0,
+      imageable_area_right_microns: mediaSize.width_microns,
+      imageable_area_top_microns: mediaSize.height_microns
+    };
+  } else {
+    throw new Error(`Unsupported pageSize: ${pageSize}`);
   }
 
   if (this._print) {
